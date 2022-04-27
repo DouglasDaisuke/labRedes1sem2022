@@ -35,7 +35,7 @@ int main(int argc, char **argv)
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-   servaddr.sin_port = htons(8000);
+   servaddr.sin_port = htons(9000);
    bind(sock_fd, (struct sockaddr *) &servaddr, sizeof(servaddr));
    listen(sock_fd, LISTENQ);
    while(true){
@@ -43,8 +43,9 @@ int main(int argc, char **argv)
        new_fd= accept(sock_fd, (struct sockaddr *) &cliaddr, &clilen);
        if ( (childpid = fork()) == 0) { /* child process */
            close(sock_fd); /* close listening socket */
+           printf("Connected %i ", new_fd);
            /* str_echo(new_fd);  process the request */
-           exit (0);
+           exit(0);
        }
        close(new_fd); /* parent closes connected socket */
    }

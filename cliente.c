@@ -15,11 +15,11 @@ int main(int argc, char *argv[])
    struct addrinfo *servinfo; // will point to the results
  
    memset(&hints, 0, sizeof(hints)); // make sure the struct is empty
-   hints.ai_family = AF_UNSPEC; //don't care IPv4 or IPv6
+   hints.ai_family = AF_INET; //don't care IPv4 or IPv6
    hints.ai_socktype = SOCK_STREAM; //TCP stream sockets
    hints.ai_flags = AI_PASSIVE; // fill in my IP for me
  
-   if (( status = getaddrinfo ("www.google.com", "http", &hints, &servinfo)) != 0) {
+   if ((status = getaddrinfo("localhost", "9000", &hints, &servinfo)) != 0) {
        fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
        exit(1);
    }
