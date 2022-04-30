@@ -11,7 +11,7 @@
 #include <json-c/json.h>
 
 #define MAXLINE 4096
-#define LISTENQ 10
+#define LISTENQ 100
 
 struct json_object * read_json_from_string(char * buffer) {
     struct json_object *json;
