@@ -13,6 +13,7 @@
 #define MAXLINE 4096
 #define LISTENQ 100
 
+
 struct json_object * read_json_from_string(char * buffer) {
     struct json_object *json;
     json = json_tokener_parse(buffer);
@@ -27,17 +28,37 @@ int read_request_from_json(struct json_object *json){
     return request_type;
 }
 
-int read_client_request(int new_fd){
+void create_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
-    json_object * request_json = read_json_from_string(buffer);
-    int request = read_request_from_json(request_json);
-    printf("The request was: %i", request);
-    if(request == 1){
-        create_movie()
+    struct json_object *movie = read_json_from_string(buffer);
+    struct json_object *movie_name_json;
+    json_object_object_get_ex(movie, "movie_name", &movie_name_json);
+    const char * movie_name_str = json_object_get_string(movie_name_json);
+    char file_name[MAXLINE];
+    sprintf(file_name, "%s%s", movie_name_str, ".json");
+    if(readResult != -1){
+        FILE *fp = fopen(file_name, "ab+");
+        if (fp) {
+            fputs(buffer, fp);
+        }
+        fclose(fp);
     }
-    return request;
 }
+
+void read_client_request(int new_fd){
+    char buffer[MAXLINE];
+    int readResult = read(new_fd, buffer, MAXLINE);
+    if(readResult != -1){
+        json_object * request_json = read_json_from_string(buffer);
+        int request = read_request_from_json(request_json);
+        printf("The request was: %i", request);
+        if(request == 1){
+            create_movie_from_client_request(new_fd);
+        }
+    }
+}
+
  
 int main(int argc, char **argv)
 {

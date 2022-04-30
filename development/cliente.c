@@ -12,6 +12,7 @@
 #define LISTENQ 10
  
 
+// Escreve requisicao para o servidor.
 void send_request_to_server(int s, char * request_type){
     int response_code = write(s, request_type, MAXLINE);
 }
@@ -38,8 +39,11 @@ int main(int argc, char *argv[])
        perror("connect call error");
    }
 
-   char request_type[MAXLINE] = "{\"request_type\": 1}";
-   send_request_to_server(s, request_type);
+   char request_json_str[MAXLINE];
+   // Formata request para envio, no formato {request_type: request_number} 
+   // e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
+   sprintf(request_json_str, "{\"%s\": %d}", "request_type", 1);
+   send_request_to_server(s, request_json_str);
 
  
    if(close(s) < 0){
