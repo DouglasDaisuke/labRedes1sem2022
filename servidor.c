@@ -8,21 +8,32 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
- 
-#define MAXLINE 100
+#include <json-c/json.h>
+
+#define MAXLINE 4096
 #define LISTENQ 10
- 
-void str_echo(int new_fd)
-{
-   ssize_t n;
-   char buf[MAXLINE];
-   again:
-   while ( (n = read(new_fd, buf, MAXLINE)) > 0)
-   write(new_fd, buf, n);
-   if (n < 0 && errno == EINTR)
-       goto again;
-   else if (n < 0)
-       perror("str_echo: read error");
+
+struct json_object * read_json_from_string(char * buffer) {
+    struct json_object *json;
+    json = json_tokener_parse(buffer);
+    return json;
+}
+
+int read_request_from_json(struct json_object *json){
+    struct json_object *json_request;
+    int request_type;
+    json_object_object_get_ex(json, "request_type", &json_request);
+    request_type = json_object_get_int(json_request);
+    return request_type;
+}
+
+int read_client_request(int new_fd){
+    char buffer[MAXLINE];
+    int readResult = read(new_fd, buffer, MAXLINE);
+    json_object * request_json = read_json_from_string(buffer);
+    int request = read_request_from_json(request_json);
+    printf("The request was: %i", request);
+    return request;
 }
  
 int main(int argc, char **argv)
@@ -44,6 +55,7 @@ int main(int argc, char **argv)
        if ( (childpid = fork()) == 0) { /* child process */
            close(sock_fd); /* close listening socket */
            printf("Connected %i ", new_fd);
+           read_client_request(new_fd);
            /* str_echo(new_fd);  process the request */
            exit(0);
        }

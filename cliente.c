@@ -7,7 +7,15 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+
+#define MAXLINE 4096
+#define LISTENQ 10
  
+
+void send_request_to_server(int s, char * request_type){
+    int response_code = write(s, request_type, MAXLINE);
+}
+
 int main(int argc, char *argv[])
 {
    int status;
@@ -25,11 +33,14 @@ int main(int argc, char *argv[])
    }
  
    int s = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-   printf("%d",s);
  
    if (connect(s, servinfo->ai_addr, servinfo->ai_addrlen) < 0){
        perror("connect call error");
    }
+
+   char request_type[MAXLINE] = "{\"request_type\": 1}";
+   send_request_to_server(s, request_type);
+
  
    if(close(s) < 0){
        return -1;
