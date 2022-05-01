@@ -43,6 +43,17 @@ void create_movies_request(int s){
     }
 }
 
+void delete_movies_request(int s){
+    char request_json_str[MAXLINE];
+    for(int i = 0; i < 5; i++){
+        printf("Removendo Filme Cadastrado \n");
+        sprintf(request_json_str, "{\"%s\": %d}", "request_type", 4);
+        send_request_to_server(s, request_json_str);
+        sprintf(request_json_str, "{\"id\": %i}", i);
+        send_request_to_server(s, request_json_str);
+    }
+}
+
 int main(int argc, char *argv[])
 {
    int status;
@@ -64,6 +75,7 @@ int main(int argc, char *argv[])
         perror("connect call error");
 
     create_movies_request(s);
+    delete_movies_request(s);
  
    if(close(s) < 0){
        return -1;

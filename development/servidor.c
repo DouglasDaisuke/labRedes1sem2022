@@ -56,6 +56,28 @@ void create_movie_from_client_request(int new_fd) {
     }
 }
 
+void delete_movie_from_client_request(int new_fd) {
+    char buffer[MAXLINE];
+    int readResult = read(new_fd, buffer, MAXLINE);
+    if(readResult > 1){
+        struct json_object *json = read_json_from_string(buffer);
+        struct json_object *id_json;
+        json_object_object_get_ex(json, "id", &id_json);
+        int id = json_object_get_int(id_json);
+        char file_name[MAXLINE];
+        sprintf(file_name, "../movies/%i%s", id, ".json");
+        FILE *fp = fopen(file_name, "r");
+        if (fp){
+            remove(file_name);
+            printf("Filme de ID %i removido com sucesso! \n", id);
+        }
+        else{
+            printf("O filme especificado nao esta cadastrado! \n");
+        }
+    }
+}
+
+// Logica para leitura das requisicoes do cliente.
 void read_client_request(int new_fd){
     char buffer[MAXLINE];
     int request = 0;
@@ -64,10 +86,23 @@ void read_client_request(int new_fd){
         if(readResult > 1){
             json_object * request_json = read_json_from_string(buffer);
             int request = read_request_from_json(request_json);
-            if(request == 1){
-                create_movie_from_client_request(new_fd);
-            } else {
-                request = -1;
+            switch (request)
+            {
+                case -1:
+                    request = -1;
+                break;
+
+                case 0:
+                    request = -1;
+                break;
+
+                case 1:
+                    create_movie_from_client_request(new_fd);
+                break;
+
+                case 4:
+                    delete_movie_from_client_request(new_fd);
+                break;
             }
         } else {
             request = -1;
