@@ -9,38 +9,48 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <json-c/json.h>
+#include <ctype.h>
 
 #define MAXLINE 4096
 #define LISTENQ 100
 
 
+// Func utilitaria para converter buffer recebido em objeto JSON.
 struct json_object * read_json_from_string(char * buffer) {
     struct json_object *json;
     json = json_tokener_parse(buffer);
     return json;
 }
 
+// Func utilitaria para ler JSON de requisicao do usuario e determinar tipo da op.
 int read_request_from_json(struct json_object *json){
     struct json_object *json_request;
     int request_type;
     json_object_object_get_ex(json, "request_type", &json_request);
     request_type = json_object_get_int(json_request);
+    printf("Request do tipo %i feita por usuario \n", request_type);
     return request_type;
 }
 
+// Func para cadastrar filme de acordo com a entrada em JSON,
+// e armazena o arquivo com nome {id.json}
 void create_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
-    struct json_object *movie = read_json_from_string(buffer);
-    struct json_object *movie_name_json;
-    json_object_object_get_ex(movie, "movie_name", &movie_name_json);
-    const char * movie_name_str = json_object_get_string(movie_name_json);
-    char file_name[MAXLINE];
-    sprintf(file_name, "%s%s", movie_name_str, ".json");
-    if(readResult != -1){
-        FILE *fp = fopen(file_name, "ab+");
-        if (fp) {
+    if(readResult > 1){
+        struct json_object *movie = read_json_from_string(buffer);
+        struct json_object *movie_name_json;
+        struct json_object *id_json;
+        json_object_object_get_ex(movie, "id", &id_json);
+        json_object_object_get_ex(movie, "movie_name", &movie_name_json);
+        int id = json_object_get_int(id_json);
+        const char *movie_name = json_object_get_string(movie_name_json);
+        char file_name[MAXLINE];
+        sprintf(file_name, "../movies/%i%s", id, ".json");
+        FILE *fp = fopen(file_name, "w+");
+        if (fp){
             fputs(buffer, fp);
+            printf("Filme de ID %i e nome %s cadastrado com sucesso! \n", id, movie_name);
         }
         fclose(fp);
     }
@@ -48,13 +58,19 @@ void create_movie_from_client_request(int new_fd) {
 
 void read_client_request(int new_fd){
     char buffer[MAXLINE];
-    int readResult = read(new_fd, buffer, MAXLINE);
-    if(readResult != -1){
-        json_object * request_json = read_json_from_string(buffer);
-        int request = read_request_from_json(request_json);
-        printf("The request was: %i", request);
-        if(request == 1){
-            create_movie_from_client_request(new_fd);
+    int request = 0;
+    while(request != -1){
+        int readResult = read(new_fd, buffer, MAXLINE);
+        if(readResult > 1){
+            json_object * request_json = read_json_from_string(buffer);
+            int request = read_request_from_json(request_json);
+            if(request == 1){
+                create_movie_from_client_request(new_fd);
+            } else {
+                request = -1;
+            }
+        } else {
+            request = -1;
         }
     }
 }
@@ -79,7 +95,6 @@ int main(int argc, char **argv)
        if ( (childpid = fork()) == 0) { /* child process */
            close(sock_fd); /* close listening socket */
            read_client_request(new_fd);
-           /* str_echo(new_fd);  process the request */
            exit(0);
        }
        close(new_fd); /* parent closes connected socket */
