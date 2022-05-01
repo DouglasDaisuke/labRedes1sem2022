@@ -40,7 +40,7 @@ int read_request_from_json(struct json_object *json){
 void create_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
-    if(readResult > 1){
+    if(readResult >= 1){
         struct json_object *movie = read_json_from_string(buffer);
         struct json_object *movie_name_json;
         struct json_object *id_json;
@@ -64,7 +64,7 @@ void create_movie_from_client_request(int new_fd) {
 void add_genre_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
-    if(readResult > 1){
+    if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);
         struct json_object *id_json;
         json_object_object_get_ex(json, "id", &id_json);
@@ -99,7 +99,7 @@ void add_genre_from_client_request(int new_fd) {
 void delete_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
-    if(readResult > 1){
+    if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);
         struct json_object *id_json;
         json_object_object_get_ex(json, "id", &id_json);
@@ -127,7 +127,7 @@ void read_client_request(int new_fd){
     int request = 0;
     while(request != -1){
         int readResult = read(new_fd, buffer, MAXLINE);
-        if(readResult > 1){
+        if(readResult >= 1){
             json_object * request_json = read_json_from_string(buffer);
             int request = read_request_from_json(request_json);
             switch (request)
