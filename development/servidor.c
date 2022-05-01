@@ -16,6 +16,7 @@
 
 
 // Func utilitaria para converter buffer recebido em objeto JSON.
+// Recebe uma string, converte ela em objeto JSON e a retorna.
 struct json_object * read_json_from_string(char * buffer) {
     struct json_object *json;
     json = json_tokener_parse(buffer);
@@ -23,17 +24,19 @@ struct json_object * read_json_from_string(char * buffer) {
 }
 
 // Func utilitaria para ler JSON de requisicao do usuario e determinar tipo da op.
+// Recebe o objeto JSON e retorna o numero representando a request feita pelo usuario. (Valores de 1 a 7).
 int read_request_from_json(struct json_object *json){
     struct json_object *json_request;
     int request_type;
     json_object_object_get_ex(json, "request_type", &json_request);
     request_type = json_object_get_int(json_request);
-    printf("Request do tipo %i feita por usuario \n", request_type);
     return request_type;
 }
 
 // Func para cadastrar filme de acordo com a entrada em JSON,
-// e armazena o arquivo com nome {id.json}
+// Recebe o ID do socket criado, realiza uma leitura do que o cliente enviar em uma string,
+// Em seguida, converte a string para objeto JSON, cria um nome de arquivo no formato {id.json}
+// E salva este objeto JSON no arquivo de nome especificado acima.
 void create_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
@@ -47,15 +50,52 @@ void create_movie_from_client_request(int new_fd) {
         const char *movie_name = json_object_get_string(movie_name_json);
         char file_name[MAXLINE];
         sprintf(file_name, "../movies/%i%s", id, ".json");
-        FILE *fp = fopen(file_name, "w+");
-        if (fp){
-            fputs(buffer, fp);
-            printf("Filme de ID %i e nome %s cadastrado com sucesso! \n", id, movie_name);
-        }
-        fclose(fp);
+        json_object_to_file(file_name, movie);
+        printf("Filme de ID %i e nome %s cadastrado com sucesso! \n", id, movie_name);
     }
 }
 
+// Func para adicionar genero em filme de ID especificado pelo usuario.
+// Recebe o ID do socket criado, realiza uma leitura do que o cliente enviar em uma string,
+// Em seguida,  converte a string para objeto JSON, le qual o ID especificado e qual genero adicionar.
+// Busca o filme de ID especificado no diretorio de filmes, se encontrar le o objeto JSON salvo,
+// Verifica se tem menos que 2 generos, e se tiver salva o genero fornecido no objeto JSON e sobescreve o arquivo antigo.
+// Caso contrario, imprime mensagem de erro.
+void add_genre_from_client_request(int new_fd) {
+    char buffer[MAXLINE];
+    int readResult = read(new_fd, buffer, MAXLINE);
+    if(readResult > 1){
+        struct json_object *json = read_json_from_string(buffer);
+        struct json_object *id_json;
+        json_object_object_get_ex(json, "id", &id_json);
+        int id = json_object_get_int(id_json);
+        struct json_object *genre_json;
+        json_object_object_get_ex(json, "genre", &genre_json);
+        const char *genre = json_object_get_string(genre_json);
+        char file_name[MAXLINE];
+        char file_contents[MAXLINE];
+        sprintf(file_name, "../movies/%i%s", id, ".json");
+        struct json_object *saved_movie = json_object_from_file(file_name);
+        if(saved_movie != NULL){
+            struct json_object *genre_array;
+            json_object_object_get_ex(saved_movie, "genre", &genre_array);
+            int genre_array_length = json_object_array_length(genre_array);
+            if (genre_array_length < 2){
+                json_object_array_add(genre_array, genre_json);
+                json_object_to_file(file_name, saved_movie);
+                printf("Adicionado genero %s no filme de ID %i \n", genre, id);
+            } else {
+                printf("O filme de id %i ja possui 2 generos. \n", id);
+            }
+        }
+    }
+}
+
+// Func para deletar filme de ID especificado pelo usuario.
+// Recebe o ID do socket criado, realiza uma leitura do que o cliente enviar em uma string,
+// Em seguida,  converte a string para objeto JSON, le qual o ID especificado.
+// Busca no diretorio de arquivos o filme especificado e verifica se existe.
+// Se existir deleta-o do diretorio de arquivos, caso contrario, imprime mensagem de erro.
 void delete_movie_from_client_request(int new_fd) {
     char buffer[MAXLINE];
     int readResult = read(new_fd, buffer, MAXLINE);
@@ -78,6 +118,10 @@ void delete_movie_from_client_request(int new_fd) {
 }
 
 // Logica para leitura das requisicoes do cliente.
+// Recebe o ID do socket criado, e continuamente le as requisicoes do usuario,
+// Ate receber um EOF ou erro de leitura, colocando cada requisicao na funcao apropriada para processamento.
+// Operacoes possiveis:
+// -1: Erro de leitura, 0: EOF, 1: Criar filme, 2: Adicionar genero, 4: Remover filme
 void read_client_request(int new_fd){
     char buffer[MAXLINE];
     int request = 0;
@@ -100,6 +144,10 @@ void read_client_request(int new_fd){
                     create_movie_from_client_request(new_fd);
                 break;
 
+                case 2:
+                    add_genre_from_client_request(new_fd);
+                break;
+
                 case 4:
                     delete_movie_from_client_request(new_fd);
                 break;
@@ -110,7 +158,11 @@ void read_client_request(int new_fd){
     }
 }
 
- 
+// Func principal, que cuida de criar os processos filhos para lidar com as requisicoes de usuarios.
+// Define que qualquer endereco IP pode se conectar com a porta 9000, e escuta requisicoes do usuario.
+// Quando receber uma conexao, aceita a mesma e cria um filho para atender a requisicao,
+// fechando o socket de escuta.
+
 int main(int argc, char **argv)
 {
    int sock_fd, new_fd;
