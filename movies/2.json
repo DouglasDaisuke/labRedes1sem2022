@@ -1,7 +1,1 @@
-{
-        "movie_name": "Os Simpsons",
-        "genre": ["Comedia"],
-        "director": "Matt Groening",
-        "year": "1989",
-        "id": 2
-}
+{"movie_name":"Os Simpsons","genre":["Comedia"],"director":"Matt Groening","year":"1989","id":2}
