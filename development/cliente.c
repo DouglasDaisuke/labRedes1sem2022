@@ -70,6 +70,17 @@ void add_genre_request(int s){
     }
 }
 
+// Func para testar a listagem de informacoes dos filmes que tiverem o id especificado pelo cliente.
+void list_movies_informations_by_id_request(int s){
+    char request_json_str[MAXLINE];
+    int movie_id;
+    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 3);
+    send_request_to_server(s, request_json_str);
+    sprintf(request_json_str, "{\"id\": %i}", 3);
+    send_request_to_server(s, request_json_str);
+}
+
+
 //Func para testar delete de um filme.
 // Formata request para envio, no formato {request_type: request_number} 
 // e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
@@ -115,8 +126,9 @@ int main(int argc, char *argv[])
         perror("connect call error");
 
     create_movies_request(s);
+    list_movies_informations_by_id_request(s);
     add_genre_request(s);
-    delete_movies_request(s);
+    //delete_movies_request(s);
  
    if(close(s) < 0){
        return -1;
