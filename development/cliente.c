@@ -49,7 +49,7 @@ void create_movies_request(int s){
     }
 }
 
-//Func para testar adicao de genero.
+// Func para testar adicao de genero.
 // Formata request para envio, no formato {request_type: request_number} 
 // e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
 // Envia a request feita para o servidor.
@@ -70,30 +70,68 @@ void add_genre_request(int s){
     }
 }
 
+
+void list_all_title_and_id_movies_request(int s){
+    char request_json_str[MAXLINE];
+    printf("Listando os nomes e ID de todos os filmes\n");
+    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 3);
+    send_request_to_server(s, request_json_str);
+}
+
+// Func para testar a listagem de informacoes dos filmes que tiverem o genero especificado pelo cliente.
+// Formata request para envio, no formato {request_type: request_number} 
+// e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
+// Envia a request feita para o servidor.
+// Em seguida, formata uma string JSON no formato {genre: "Acao"}
+// Para especificar a listagem das informacoes do filme de genero = "Acao"
+// E envia esta string JSON para o servidor.
+void list_movies_informations_by_genre_request(int s){
+    char request_json_str[MAXLINE];
+    char *genre = "Guerra";
+    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 4);
+    send_request_to_server(s, request_json_str);
+    printf("Listando informações do Filme do genero especificado\n");
+    sprintf(request_json_str, "{\"genre\": \"%s\"}", genre);
+    send_request_to_server(s, request_json_str);
+}
+
+void list_all_movies_informations_request(int s){
+    char request_json_str[MAXLINE];
+    printf("Listando informações de todos os Filme\n");
+    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 5);
+    send_request_to_server(s, request_json_str);
+} 
+
 // Func para testar a listagem de informacoes dos filmes que tiverem o id especificado pelo cliente.
+// Formata request para envio, no formato {request_type: request_number} 
+// e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
+// Envia a request feita para o servidor.
+// Em seguida, formata uma string JSON no formato {id: 0}
+// Para especificar a listagem das informacoes do filme de ID = 0
+// E envia esta string JSON para o servidor.
 void list_movies_informations_by_id_request(int s){
     char request_json_str[MAXLINE];
     int movie_id;
-    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 3);
+    printf("Listando informações do Filme\n");
+    sprintf(request_json_str, "{\"%s\": %d}", "request_type", 6);
     send_request_to_server(s, request_json_str);
     sprintf(request_json_str, "{\"id\": %i}", 3);
     send_request_to_server(s, request_json_str);
 }
 
 
-//Func para testar delete de um filme.
+// Func para testar delete de um filme.
 // Formata request para envio, no formato {request_type: request_number} 
 // e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
 // Envia a request feita para o servidor.
 // Em seguida, formata uma string JSON no formato {id: 0}
 // Para especificar a remocao do filme de ID 0.
 // E envia esta string JSON para o servidor.
-
 void delete_movies_request(int s){
     char request_json_str[MAXLINE];
     for(int i = 0; i < 5; i++){
         printf("Removendo Filme Cadastrado \n");
-        sprintf(request_json_str, "{\"%s\": %d}", "request_type", 4);
+        sprintf(request_json_str, "{\"%s\": %d}", "request_type", 7);
         send_request_to_server(s, request_json_str);
         sprintf(request_json_str, "{\"id\": %i}", i);
         send_request_to_server(s, request_json_str);
@@ -127,8 +165,11 @@ int main(int argc, char *argv[])
 
     create_movies_request(s);
     list_movies_informations_by_id_request(s);
+    list_movies_informations_by_genre_request(s);
+    list_all_title_and_id_movies_request(s);
+    list_all_movies_informations_request(s);
     add_genre_request(s);
-    //delete_movies_request(s);
+    delete_movies_request(s);
  
    if(close(s) < 0){
        return -1;
