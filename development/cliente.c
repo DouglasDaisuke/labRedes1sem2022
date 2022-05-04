@@ -7,10 +7,17 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <time.h>
 
 #define MAXLINE 4096
 #define LISTENQ 10
  
+
+// Func para criar um delay em segundos
+void waitFor (unsigned int secs) {
+    unsigned int retTime = time(0) + secs;   
+    while (time(0) < retTime);               
+}
 
 // Escreve requisicao para o servidor.
 // Recebe o socket do cliente criado, e uma string em formato JSON.
@@ -70,7 +77,10 @@ void add_genre_request(int s){
     }
 }
 
-
+// Func para testar a listagem dos titulos junto aos id de todos os filmes
+// Formata request para envio, no formato {request_type: request_number} 
+// e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
+// Envia a request feita para o servidor.
 void list_all_title_and_id_movies_request(int s){
     char request_json_str[MAXLINE];
     printf("Listando os nomes e ID de todos os filmes\n");
@@ -82,8 +92,8 @@ void list_all_title_and_id_movies_request(int s){
 // Formata request para envio, no formato {request_type: request_number} 
 // e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
 // Envia a request feita para o servidor.
-// Em seguida, formata uma string JSON no formato {genre: "Acao"}
-// Para especificar a listagem das informacoes do filme de genero = "Acao"
+// Em seguida, formata uma string JSON no formato {genre: "Guerra"}
+// Para especificar a listagem das informacoes do filme de genero = "Guerra"
 // E envia esta string JSON para o servidor.
 void list_movies_informations_by_genre_request(int s){
     char request_json_str[MAXLINE];
@@ -95,6 +105,10 @@ void list_movies_informations_by_genre_request(int s){
     send_request_to_server(s, request_json_str);
 }
 
+// Func para testar a listagem as informações de todos os filmes
+// Formata request para envio, no formato {request_type: request_number} 
+// e armazena em request_json_str. A request pode assumir valor entre 1 a 7.
+// Envia a request feita para o servidor.
 void list_all_movies_informations_request(int s){
     char request_json_str[MAXLINE];
     printf("Listando informações de todos os Filme\n");
@@ -164,12 +178,28 @@ int main(int argc, char *argv[])
         perror("connect call error");
 
     create_movies_request(s);
+    waitFor(1);
+
     list_movies_informations_by_id_request(s);
+    waitFor(1);
+
     list_movies_informations_by_genre_request(s);
+    waitFor(1);
+
     list_all_title_and_id_movies_request(s);
+    waitFor(1);
+
     list_all_movies_informations_request(s);
-    add_genre_request(s);
-    delete_movies_request(s);
+    waitFor(1);
+
+    //add_genre_request(s);
+    //waitFor(1);
+    //list_all_movies_informations_request(s);
+    waitFor(1);
+    
+    //delete_movies_request(s);
+    //waitFor(1);
+    //list_all_movies_informations_request(s);
  
    if(close(s) < 0){
        return -1;
