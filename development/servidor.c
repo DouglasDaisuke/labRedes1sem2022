@@ -24,6 +24,15 @@ struct json_object * read_json_from_string(char * buffer) {
     return json;
 }
 
+// Func utilitaria para enviar mensagens informativas ao cliente.
+void send_message_to_client(int new_fd, char * message){
+    char buffer[MAXLINE];
+    sprintf(buffer, "%s", message);
+    int response_code = write(new_fd, buffer, MAXLINE);
+    if(response_code <= 0)
+        exit(1);
+}
+
 // Func utilitaria para ler JSON de requisicao do usuario e determinar tipo da op.
 // Recebe o objeto JSON e retorna o numero representando a request feita pelo usuario. (Valores de 1 a 7).
 int read_request_from_json(struct json_object *json){
@@ -39,7 +48,7 @@ int read_request_from_json(struct json_object *json){
 // Em seguida, converte a string para objeto JSON, cria um nome de arquivo no formato {id.json}
 // E salva este objeto JSON no arquivo de nome especificado acima.
 void create_movie_from_client_request(int new_fd) {
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int readResult = read(new_fd, buffer, MAXLINE);
     if(readResult >= 1){
         struct json_object *movie = read_json_from_string(buffer);
@@ -63,7 +72,7 @@ void create_movie_from_client_request(int new_fd) {
 // Verifica se tem menos que 2 generos, e se tiver salva o genero fornecido no objeto JSON e sobescreve o arquivo antigo.
 // Caso contrario, imprime mensagem de erro.
 void add_genre_from_client_request(int new_fd) {
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int readResult = read(new_fd, buffer, MAXLINE);
     if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);
@@ -135,7 +144,7 @@ void list_all_title_and_id_movies_from_client_request(){
 // Se não, continua percorrendo a lista de genero
 // Se não for encontrado nenhum filme com o genero especificado em todo diretorio, é impresso uma mensagem avisando que não foi encontrado
 void list_movies_informations_by_genre_from_client_request(int new_fd){
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int readResult = read(new_fd, buffer, MAXLINE);
     int found = 0;
     if(readResult >= 1){
@@ -241,7 +250,7 @@ void list_all_movies_informations_from_client_request(){
 // Busca no diretorio de arquivos o filme com o ID especificado e verifica se ele existe
 // Se existir imprimi todas as suas informacoes, caso contrario, imprime mensagem de erro.
 void list_movies_informations_by_id_from_client_request(int new_fd){
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int readResult = read(new_fd, buffer, MAXLINE);
     if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);        
@@ -285,7 +294,7 @@ void list_movies_informations_by_id_from_client_request(int new_fd){
 // Busca no diretorio de arquivos o filme especificado e verifica se existe.
 // Se existir deleta-o do diretorio de arquivos, caso contrario, imprime mensagem de erro.
 void delete_movie_from_client_request(int new_fd) {
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int readResult = read(new_fd, buffer, MAXLINE);
     if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);
@@ -311,8 +320,9 @@ void delete_movie_from_client_request(int new_fd) {
 // Operacoes possiveis:
 // -1: Erro de leitura, 0: EOF, 1: Criar filme, 2: Adicionar genero, 4: Remover filme
 void read_client_request(int new_fd){
-    char buffer[MAXLINE];
+    char buffer[MAXLINE] = {0};
     int request = 0;
+    int response_code;
     while(request != -1){
         int readResult = read(new_fd, buffer, MAXLINE);
         if(readResult >= 1){
@@ -330,30 +340,37 @@ void read_client_request(int new_fd){
 
                 case 1:
                     create_movie_from_client_request(new_fd);
+                    send_message_to_client(new_fd, "Filme criado com sucesso!");
                 break;
 
                 case 2:
                     add_genre_from_client_request(new_fd);
+                    send_message_to_client(new_fd, "Genero adicionado com sucesso!");
                 break;
 
                 case 3:
                     list_all_title_and_id_movies_from_client_request();
+                    send_message_to_client(new_fd, "Mensagem a concluir 3");
                 break;
 
                 case 4:
                     list_movies_informations_by_genre_from_client_request(new_fd);
+                    send_message_to_client(new_fd, "Mensagem a concluir 4");
                 break;
                 
                 case 5:
                     list_all_movies_informations_from_client_request();
+                    send_message_to_client(new_fd, "Mensagem a concluir 5");
                 break;
 
                 case 6:
                     list_movies_informations_by_id_from_client_request(new_fd);
+                    send_message_to_client(new_fd, "Mensagem a concluir 6");
                 break;
 
                 case 7:
                     delete_movie_from_client_request(new_fd);
+                    send_message_to_client(new_fd, "Filme deletado com sucesso!");
                 break;
             }
         } else {

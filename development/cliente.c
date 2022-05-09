@@ -19,6 +19,16 @@ void waitFor (unsigned int secs) {
     while (time(0) < retTime);               
 }
 
+// Func para ler resposta do servidor.
+void read_response_from_server(int s){
+    char buffer[MAXLINE] = {0};
+    int readResult;
+    readResult = read(s, buffer, MAXLINE);
+    if(readResult <= 0)
+        exit(1);
+    printf("%s \n", buffer);
+}
+
 // Escreve requisicao para o servidor.
 // Recebe o socket do cliente criado, e uma string em formato JSON.
 // E envia para o servidor.
@@ -53,6 +63,7 @@ void create_movies_request(int s){
         \"year\": \"%s\",\n\
         \"id\": %i\n}", movie_names[i], genres[i], directors[i], year[i], i);
         send_request_to_server(s, request_json_str);
+        read_response_from_server(s);
     }
 }
 
@@ -74,6 +85,7 @@ void add_genre_request(int s){
         sprintf(request_json_str,
         "{\"id\": %i, \"genre\": \"%s\"}", i, genre_to_add);
         send_request_to_server(s, request_json_str);
+        read_response_from_server(s);
     }
 }
 
@@ -86,6 +98,7 @@ void list_all_title_and_id_movies_request(int s){
     printf("Listando os nomes e ID de todos os filmes\n");
     sprintf(request_json_str, "{\"%s\": %d}", "request_type", 3);
     send_request_to_server(s, request_json_str);
+    read_response_from_server(s);
 }
 
 // Func para testar a listagem de informacoes dos filmes que tiverem o genero especificado pelo cliente.
@@ -103,6 +116,7 @@ void list_movies_informations_by_genre_request(int s){
     printf("Listando informações do Filme do genero especificado\n");
     sprintf(request_json_str, "{\"genre\": \"%s\"}", genre);
     send_request_to_server(s, request_json_str);
+    read_response_from_server(s);
 }
 
 // Func para testar a listagem as informações de todos os filmes
@@ -114,6 +128,7 @@ void list_all_movies_informations_request(int s){
     printf("Listando informações de todos os Filme\n");
     sprintf(request_json_str, "{\"%s\": %d}", "request_type", 5);
     send_request_to_server(s, request_json_str);
+    read_response_from_server(s);
 } 
 
 // Func para testar a listagem de informacoes dos filmes que tiverem o id especificado pelo cliente.
@@ -131,6 +146,7 @@ void list_movies_informations_by_id_request(int s){
     send_request_to_server(s, request_json_str);
     sprintf(request_json_str, "{\"id\": %i}", 3);
     send_request_to_server(s, request_json_str);
+    read_response_from_server(s);
 }
 
 
@@ -149,6 +165,7 @@ void delete_movies_request(int s){
         send_request_to_server(s, request_json_str);
         sprintf(request_json_str, "{\"id\": %i}", i);
         send_request_to_server(s, request_json_str);
+        read_response_from_server(s);
     }
 }
 
@@ -177,30 +194,27 @@ int main(int argc, char *argv[])
     if (connect(s, servinfo->ai_addr, servinfo->ai_addrlen) < 0)
         perror("connect call error");
 
+    char buffer[MAXLINE] = {0};
+    int readResult;
+
     create_movies_request(s);
-    waitFor(1);
 
     list_movies_informations_by_id_request(s);
-    waitFor(1);
 
     list_movies_informations_by_genre_request(s);
-    waitFor(1);
 
     list_all_title_and_id_movies_request(s);
-    waitFor(1);
 
     list_all_movies_informations_request(s);
-    waitFor(1);
 
-    //add_genre_request(s);
-    //waitFor(1);
-    //list_all_movies_informations_request(s);
-    waitFor(1);
+    add_genre_request(s);
+
+    list_all_movies_informations_request(s);
+
+    delete_movies_request(s);
     
-    //delete_movies_request(s);
-    //waitFor(1);
-    //list_all_movies_informations_request(s);
- 
+    list_all_movies_informations_request(s);
+     
    if(close(s) < 0){
        return -1;
    };
