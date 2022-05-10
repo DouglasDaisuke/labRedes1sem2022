@@ -11,13 +11,7 @@
 
 #define MAXLINE 4096
 #define LISTENQ 10
- 
 
-// Func para criar um delay em segundos
-void waitFor (unsigned int secs) {
-    unsigned int retTime = time(0) + secs;   
-    while (time(0) < retTime);               
-}
 
 // Func para ler resposta do servidor.
 void read_response_from_server(int s){
