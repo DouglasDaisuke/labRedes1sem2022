@@ -141,7 +141,7 @@ void list_all_movies_informations_request(int s){
 void list_movies_informations_by_id_request(int s){
     char request_json_str[MAXLINE];
     int movie_id;
-    printf("Listando informações do Filme\n");
+    printf("Listando informações do Filme pelo id especificado:\n");
     sprintf(request_json_str, "{\"%s\": %d}", "request_type", 6);
     send_request_to_server(s, request_json_str);
     sprintf(request_json_str, "{\"id\": %i}", 3);

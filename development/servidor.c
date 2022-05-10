@@ -63,6 +63,7 @@ void create_movie_from_client_request(int new_fd) {
         json_object_to_file(file_name, movie);
         printf("Filme de ID %i e nome %s cadastrado com sucesso! \n", id, movie_name);
     }
+    send_message_to_client(new_fd, "Filme criado com sucesso!");
 }
 
 // Func para adicionar genero em filme de ID especificado pelo usuario.
@@ -99,13 +100,14 @@ void add_genre_from_client_request(int new_fd) {
             }
         }
     }
+    send_message_to_client(new_fd, "Genero adicionado com sucesso!");
 }
 
 // Func para listar todos os titulos de id dos filmes
 // Percorre o diretorio e para cada arquivo encontrado, irá ler o arquivo que contem informações do filme
 // Lê o objeto JSON que esta o nome e o ID do filme e converte em string
 // Imprimi o valor do nome do ID lido
-void list_all_title_and_id_movies_from_client_request(){
+void list_all_title_and_id_movies_from_client_request(int new_fd){
     int found = 0;
     DIR * dirp;
     struct dirent * entry;
@@ -114,7 +116,7 @@ void list_all_title_and_id_movies_from_client_request(){
         perror ("Não foi possível abrir o diretorio");
         exit (1) ;
     }
-    printf("Listagem dos Nomes e ID:\n");
+    char response[MAXLINE] = "{\"list_name_id\":[";
     while ((entry = readdir(dirp)) != NULL) {
         if (entry->d_type == DT_REG) { 
             char file_name[MAXLINE];
@@ -127,13 +129,19 @@ void list_all_title_and_id_movies_from_client_request(){
                 json_object_object_get_ex(saved_movie, "id", &movie_id_json);
                 const char* movie_name = json_object_get_string(movie_name_json);
                 const char* movie_id = json_object_get_string(movie_id_json);
-                printf("Nome: %s, ", movie_name);
-                printf("ID: %s\n", movie_id);
+                strcat(response, "{\"movie_name\":\"");
+                strcat(response, movie_name);
+                strcat(response, "\",\"id\":\"");
+                strcat(response, movie_id);
+                strcat(response, "\"},");
                 found++;
             }
         }
     }
+    strcat(response, "]}");
+    printf("%s\n", response);
     if (found == 0) printf("Não foi encontrado nenhum filme");
+    send_message_to_client(new_fd, response);
 }
 
 // Func que lista as informações dos filmes que são do genero especificado pelo cliente
@@ -159,6 +167,7 @@ void list_movies_informations_by_genre_from_client_request(int new_fd){
             perror ("Não foi possível abrir o diretorio");
             exit (1) ;
         }
+        char response[MAXLINE] = "{\"list_info\":[";
         while ((entry = readdir(dirp)) != NULL) {
             if (entry->d_type == DT_REG) {  // verifica se é um arquivo
                 char file_name[MAXLINE];
@@ -180,17 +189,23 @@ void list_movies_informations_by_genre_from_client_request(int new_fd){
                             const char* movie_name = json_object_get_string(movie_name_json);
                             const char* director = json_object_get_string(director_json);
                             const char* year = json_object_get_string(year_json);
-                            printf("Informações sobre o filme com genero %s - ", genre_target );
-                            printf("Nome: %s, ", movie_name);
-                            printf("Diretor: %s, ", director);
-                            printf("Ano: %s\n", year);
+                            strcat(response, "{\"movie_name\":\"");
+                            strcat(response, movie_name);
+                            strcat(response, "\",\"director\":\"");
+                            strcat(response, director);
+                            strcat(response, "\",\"year\":\"");
+                            strcat(response, year);
+                            strcat(response, "\"},");
                             found++;
                         }
                     }
                 }
             }
         }
+        strcat(response, "]}");
+        printf("%s\n", response);
         if (found == 0) printf("Os filmes com genero: %s, não foi encontrado", genre_target);
+        send_message_to_client(new_fd, response);
     }
 };
 
@@ -198,7 +213,7 @@ void list_movies_informations_by_genre_from_client_request(int new_fd){
 // Percorre o diretorio e para cada arquivo encontrado, irá ler o arquivo que contem informações do filme
 // Lê o objeto JSON que contem as informações do filme e converte em string
 // Imprimi o valor de todas as informações do filme
-void list_all_movies_informations_from_client_request(){
+void list_all_movies_informations_from_client_request(int new_fd){
     int found = 0;
     DIR * dirp;
     struct dirent * entry;
@@ -207,7 +222,7 @@ void list_all_movies_informations_from_client_request(){
         perror ("Não foi possível abrir o diretorio");
         exit (1) ;
     }
-    printf("Listagem das informações dos filmes:\n");
+    char response[MAXLINE] = "{\"list_info\":[";
     while ((entry = readdir(dirp)) != NULL) {
         if (entry->d_type == DT_REG) { 
             char file_name[MAXLINE];
@@ -224,25 +239,39 @@ void list_all_movies_informations_from_client_request(){
                 json_object_object_get_ex(saved_movie, "genre", &genre_array_json);
                 json_object_object_get_ex(saved_movie, "director", &director_json);
                 json_object_object_get_ex(saved_movie, "year", &year_json);
-                int id = json_object_get_int(movie_id_json);
+                const char* id = json_object_get_string(movie_id_json);
                 const char* movie_name = json_object_get_string(movie_name_json);
                 int genre_array_length = json_object_array_length(genre_array_json);
                 const char* director = json_object_get_string(director_json);
                 const char* year = json_object_get_string(year_json);
-                printf("ID: %d, ", id);
-                printf("Nome: %s, ", movie_name);
-                printf("Generos: ");
+                strcat(response, "{\"movie_name\":\"");
+                strcat(response, movie_name);
+                strcat(response, "\",\"genre\":[\"");
                 for (int arr_i = 0; arr_i < genre_array_length; arr_i++){
                     json_object * genre_array_obj = json_object_array_get_idx(genre_array_json, arr_i);
+                    if (arr_i > 0 || genre_array_length == 1){
+                        strcat(response, json_object_get_string(genre_array_obj));
+                    }else{
+                        strcat(response, json_object_get_string(genre_array_obj));
+                        strcat(response, "\",\"");
+                    }
                     printf("%s, ", json_object_get_string(genre_array_obj));
                 }
-                printf("Diretor: %s, ", director);
-                printf("Ano: %s\n", year);
+                strcat(response, "\"],\"director\":\"");
+                strcat(response, director);
+                strcat(response, "\",\"year\":\"");
+                strcat(response, year);
+                strcat(response, "\",\"id\":\"");
+                strcat(response, id);
+                strcat(response, "\"},");
                 found++;
             }
         }
     }
+    strcat(response, "]}");
+    printf("%s\n", response);
     if (found == 0) printf("Não foi encontrado nenhum filme ");
+    send_message_to_client(new_fd, response);
 }  
 
 // Func para listar as informacoes dos filmes que tiverem o ID especificado pelo cliente.
@@ -251,6 +280,7 @@ void list_all_movies_informations_from_client_request(){
 // Se existir imprimi todas as suas informacoes, caso contrario, imprime mensagem de erro.
 void list_movies_informations_by_id_from_client_request(int new_fd){
     char buffer[MAXLINE] = {0};
+    char response[MAXLINE] = "{\"list_info\":[";
     int readResult = read(new_fd, buffer, MAXLINE);
     if(readResult >= 1){
         struct json_object *json = read_json_from_string(buffer);        
@@ -273,18 +303,31 @@ void list_movies_informations_by_id_from_client_request(int new_fd){
             int genre_array_length = json_object_array_length(genre_array_json);
             const char* director = json_object_get_string(director_json);
             const char* year = json_object_get_string(year_json);
-            printf("Informações sobre o filme de id %d - ", id);
-            printf("Nome: %s, ", movie_name);
+            strcat(response, "{\"movie_name\":\"");
+            strcat(response, movie_name);
+            strcat(response, "\",\"genre\":[\"");
             for (int arr_i = 0; arr_i < genre_array_length; arr_i++){
                 json_object * genre_array_obj = json_object_array_get_idx(genre_array_json, arr_i);
-                printf("Generos: %s, ", json_object_get_string(genre_array_obj));
+                if (arr_i > 0 || genre_array_length == 1){
+                    strcat(response, json_object_get_string(genre_array_obj));
+                }else{
+                    strcat(response, json_object_get_string(genre_array_obj));
+                    strcat(response, "\",\"");
+                }
+                printf("%s, ", json_object_get_string(genre_array_obj));
             }
-            printf("Diretor: %s, ", director);
-            printf("Ano: %s\n", year);
+            strcat(response, "\"],\"director\":\"");
+            strcat(response, director);
+            strcat(response, "\",\"year\":\"");
+            strcat(response, year);
+            strcat(response, "\"},");
         }
         else{
             printf("O filme com id: %d, não foi encontrado", id);
         }
+        strcat(response, "]}");
+        printf("%s\n", response);
+        send_message_to_client(new_fd, response);
     }
 }
 
@@ -312,6 +355,7 @@ void delete_movie_from_client_request(int new_fd) {
             printf("O filme especificado nao esta cadastrado! \n");
         }
     }
+    send_message_to_client(new_fd, "Filme deletado com sucesso!");
 }
 
 // Logica para leitura das requisicoes do cliente.
@@ -321,6 +365,7 @@ void delete_movie_from_client_request(int new_fd) {
 // -1: Erro de leitura, 0: EOF, 1: Criar filme, 2: Adicionar genero, 4: Remover filme
 void read_client_request(int new_fd){
     char buffer[MAXLINE] = {0};
+    char response[MAXLINE];
     int request = 0;
     int response_code;
     while(request != -1){
@@ -340,37 +385,30 @@ void read_client_request(int new_fd){
 
                 case 1:
                     create_movie_from_client_request(new_fd);
-                    send_message_to_client(new_fd, "Filme criado com sucesso!");
                 break;
 
                 case 2:
                     add_genre_from_client_request(new_fd);
-                    send_message_to_client(new_fd, "Genero adicionado com sucesso!");
                 break;
 
                 case 3:
-                    list_all_title_and_id_movies_from_client_request();
-                    send_message_to_client(new_fd, "Mensagem a concluir 3");
+                    list_all_title_and_id_movies_from_client_request(new_fd);
                 break;
 
                 case 4:
                     list_movies_informations_by_genre_from_client_request(new_fd);
-                    send_message_to_client(new_fd, "Mensagem a concluir 4");
                 break;
                 
                 case 5:
-                    list_all_movies_informations_from_client_request();
-                    send_message_to_client(new_fd, "Mensagem a concluir 5");
+                    list_all_movies_informations_from_client_request(new_fd);
                 break;
 
                 case 6:
                     list_movies_informations_by_id_from_client_request(new_fd);
-                    send_message_to_client(new_fd, "Mensagem a concluir 6");
                 break;
 
                 case 7:
                     delete_movie_from_client_request(new_fd);
-                    send_message_to_client(new_fd, "Filme deletado com sucesso!");
                 break;
             }
         } else {
