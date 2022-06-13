@@ -130,7 +130,7 @@ int start_polling(int sock_fd, short event){
     }
     if (num_events == 0) {
         printf("Poll timed out!\n");
-        exit(1);
+        return 0;
     }
     return pfds[0].revents & event; // return if polling happened or not
 }
