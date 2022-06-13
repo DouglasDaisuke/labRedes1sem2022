@@ -113,7 +113,6 @@ int validate_client_content(int request_type, char * message){
         struct json_object *id_json;
         json_object_object_get_ex(json, "id", &id_json);
         int id = json_object_get_int(id_json);
-        printf("delete id: %d\n", id);
         if(json_object_object_get_ex(json, "id", &id_json) != true)
             return -1;
         return 1;
@@ -521,10 +520,10 @@ void read_client_request(int new_fd, struct addrinfo * servinfo){
     fromlen = sizeof  servinfo->ai_addr;
     while(request != -1){
         //printf("count: %d\n", count);
-        if (count == 13){
-            request = -1;
-        }
-        count = count+= 1;
+        //if (count == 13){
+        //    request = -1;
+        //}
+        //count = count+= 1;
         int pollin_happened = start_polling(new_fd, POLLIN);
         if (pollin_happened) {
             int readResult = recvfrom(new_fd, buffer, MAXLINE,0, servinfo->ai_addr, &fromlen);
