@@ -120,6 +120,11 @@ int validate_client_content(int request_type, char * message){
     return -1;
 }
 
+// Func que implementa o poll()
+// pfds é a array que armazena os descritores do socket que queremos monitorar e o tipo de evento que espera-se
+// Se durante o tempo TIMEOUT_MILISEC não houver nenhum evento no socket monitorado, ocorre o timout e o programa retorna 0, ou seja, o evento não ocorreu
+// Caso um evento ocorra antes do timeout, ele é descrito no campo "pfds[0].revents"
+// E retorna se o evento esperado ocorreu ou não
 int start_polling(int sock_fd, short event){
     int num_events;
     struct pollfd pfds[1]; 
@@ -507,7 +512,7 @@ void delete_movie_from_client_request(int new_fd, struct addrinfo * servinfo) {
 }
 
 // Logica para leitura das requisicoes do cliente.
-// Recebe o ID do socket criado, e continuamente le as requisicoes do usuario,
+// Recebe o ID do socket criado e continuamente le as requisicoes do usuario,
 // Ate receber um EOF ou erro de leitura, colocando cada requisicao na funcao apropriada para processamento.
 // Operacoes possiveis:
 // -1: Erro de leitura, 0: EOF, 1: Criar filme, 2: Adicionar genero, 4: Remover filme
@@ -515,21 +520,15 @@ void read_client_request(int new_fd, struct addrinfo * servinfo){
     char buffer[MAXLINE] = {0};
     char response[MAXLINE];
     int request = 0;
-    int response_code, num_events, count = 0;
+    int response_code, num_events;
     socklen_t fromlen;
     fromlen = sizeof  servinfo->ai_addr;
     while(request != -1){
-        //printf("count: %d\n", count);
-        //if (count == 13){
-        //    request = -1;
-        //}
-        //count = count+= 1;
         int pollin_happened = start_polling(new_fd, POLLIN);
         if (pollin_happened) {
             int readResult = recvfrom(new_fd, buffer, MAXLINE,0, servinfo->ai_addr, &fromlen);
             if(readResult >= 1){
                 int request = validate_response(buffer);
-                //printf("request: %d\n", request);
                 switch (request)
                 {
                     case -1:
@@ -581,9 +580,6 @@ void read_client_request(int new_fd, struct addrinfo * servinfo){
 
 // Func principal, que ouve as as requisicoes de usuarios e retorna o desejado para o proprio usuario
 // Define que qualquer endereco IP pode se conectar com a porta 9000, e escuta requisicoes do usuario.
-// Quando receber uma conexao, aceita a mesma e fica esperando para receber a requisicao,
-
-
 int main(int argc, char **argv)
 {
     int status, sock_fd;

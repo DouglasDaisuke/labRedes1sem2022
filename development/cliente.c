@@ -36,6 +36,11 @@ void send_request_to_server(int s, char * request_type,  struct addrinfo * servi
     }
 }
 
+// Func que implementa o poll()
+// pfds é a array que armazena os descritores do socket que queremos monitorar e o tipo de evento que espera-se
+// Se durante o tempo TIMEOUT_MILISEC não houver nenhum evento no socket monitorado, ocorre o timout e o programa é encerrado
+// Caso um evento ocorra antes do timeout, ele é descrito no campo "pfds[0].revents"
+// E retorna se o evento esperado ocorreu ou não
 int start_polling(int sock_fd, short event){
     int num_events;
     struct pollfd pfds[1]; 
